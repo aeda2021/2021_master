@@ -33,11 +33,11 @@ Bees$sBeesN <- scale(Bees$BeesN)
 ```
 
 # Make a Cleveland dot-chart of spores vs. hive
-```{r}
+```{r cleveland}
 dotchart(Bees$Spobee, groups = Bees$fhive, xlab='Spores', ylab='Hive ID')
 ```
 
-## Q1. Does variance of spore density appear homogenous among hives? Why or why not?
+### Q1. Does variance of spore density appear homogenous among hives? Why or why not?
 type answer here
 
 Try some transformations of the response variable to homogenize the variances (or at least improve it). 
@@ -45,7 +45,7 @@ Try some transformations of the response variable to homogenize the variances (o
 #type your code here
 ```
 
-## Q2. Which transformation of spore density seems reasonable? Why?
+### Q2. Which transformation of spore density seems reasonable? Why?
 type answer here
 
 
@@ -178,4 +178,4 @@ Calculate the correlation between observations from the same hive as variance(fh
 
 ### Q13. Given the correlation among observations from the same hive, do you think it's a good use of time to sample each hive multiple times? Why or why not?
 
-
+type your answer here
