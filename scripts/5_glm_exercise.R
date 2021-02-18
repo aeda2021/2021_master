@@ -5,7 +5,7 @@
 # read through the comments and run the code below
 # whenever you see a comment line that begins with Q, discuss that question with your partner (you do not need to write the answer out)
 # if the Q question requires you to write code, do so
-# when you are finished, push your completed code to your Github repo at  https://github.com/aeda2021/
+# when you are finished, push your completed code to your Github repo
 
 ## Outline
 # some glm basics
