@@ -1,15 +1,25 @@
 # Class 6: Mixed Effects Models
 # Turn this exercise sheet in by 
 # 1) Going through the code below, filling in any sections that are missing
-# 2) If the code asks you to make a figure, be sure to save it by name from this script into your figures/ directory. Name must start with 6_
-# 3) Answering any questions (labeled Q#) by typing comments in this text (start line with #)
+# 2) If the code asks you to make a figure, be sure to save it by name from this script into your figures/ directory. Name must start with 6_ so that we can find it.
+# 3) Answering any questions (labeled Q#) by typing comments in this text (start each line with #)
 # 4) Committing this completed script and any figures to your Git repo
 # 5) Pushing your commits to Github so that we can see.
 # 6) This is due no later than the start of class 7.
 
+# INTRODUCTION
+# American Foulbrood (AFB) is an infectious disease affecting the larval stage of honeybees (Apis mellifera) and is the most widespread and destructive of the brood diseases. The causative agent is Paenibacillus larvae and the spore forming bacterium infects queen, drone, and worker larvae. Only the spore stage of the bacterium is infectious to honey bee larvae. The spores germinate into the vegetative stage soon after they enter the larval gut and continue to multiply until larval death. The spores are extremely infective and resilient, and one dead larva may contain billions of spores. 
+
+# Although adult bees are not directly affected by AFB, some of the tasks carried out by workers might have an impact on the transmission of AFB spores within the colony and on the transmission of spores between colonies. When a bee hatches from its cell, its first task is to clean the surrounding cells, and its next task is tending and feeding of larvae. Here, the risk of transmitting AFB spores is particularly great if larvae that succumbed to AFB are cleaned prior to feeding susceptible larvae. 
+
+# Because AFB is extremely contagious, hard to cure, and lethal at the colony level, it is of importance to detect outbreaks, before they spread and become difficult to control. Reliable detection methods are also important for studies of pathogen transmission within and between colonies. Of the available methods, sampling adult bees has been shown the most effective. Hornitzky and Karlovskis (1989) introduced the method of culturing adult honey bees for AFB, and demonstrated that spores can be detected from colonies without clinical symptoms. Recently, culturing of P. larvae from adult honey bee samples has been shown to be a more sensitive tool for AFB screening compared to culturing of honey samples. When samples of adult bees are used, the detection level of P. larvae is closely linked to the distribution of spores among the bees. 
+
+# For this reason, we will model the density of P. larvae with the potential explanatory variables as number of bees in the hive, presence or absence of AFB, and hive identity.
+
+
 # Read in and examine bee data
 # Spobee column has density of P. larvae spores (the bacterium). 
-# Hive has the ID of the hive sampled (3 samples/hive)
+# Hive has the ID of the hive sampled (there are 3 samples/hive)
 # Infection has a metric quantifying the degree of infection. We will turn this into yes/no whether infection is present. 
 Bees <- read.table(url('https://raw.githubusercontent.com/aeda2021/2021_master/main/data/Bees.txt'), header=TRUE)
 head(Bees)
