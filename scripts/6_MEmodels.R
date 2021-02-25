@@ -21,7 +21,7 @@
 # Spobee column has density of P. larvae spores (the bacterium). 
 # Hive has the ID of the hive sampled (there are 3 samples/hive)
 # Infection has a metric quantifying the degree of infection. We will turn this into yes/no whether infection is present. 
-Bees <- read.table(url('https://raw.githubusercontent.com/aeda2021/2021_master/main/data/Bees.txt'), header=TRUE)
+Bees <- read.table(url('https://github.com/aeda2021/2021_master/raw/main/raw-data/Bees.txt'), header=TRUE)
 head(Bees)
 
 # make hive a factor
