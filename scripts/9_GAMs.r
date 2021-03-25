@@ -1,6 +1,3 @@
-## Make sure to set your working directory to the location of the ISIT.txt file (preferably your working directory for this class)
-
-
 ## Load some packages that will be useful
 library(mgcv) # load the MGCV package with Simon Wood's gam() functions
 library(readr) # Hadley Wickham's package for reading in data easily
