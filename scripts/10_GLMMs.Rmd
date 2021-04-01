@@ -1,99 +1,99 @@
 ---
-title: "Eine Einführung in GLMMs"
-author: "Adaptiert von M. Pinsky aus Zuur et al. 2009 Kap. 21 und dem DHARMa-Tutorial"
-date: "30/03/2021"
+title: "An introduction to GLMMs"
+author: "Adapted by M. Pinsky from Zuur et al. 2009 Ch. 21 and the DHARMa tutorial"
+date: "3/30/2021"
 output:
     github_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-require(ncf)
-require(glmmTMB)
-require(DHARMa)
+require(ncf) # for spline correlograms
+require(glmmTMB) # for glmms
+require(DHARMa) # for glm model evaluation
 ```
 
-## Einführung
-Die Vorhersage der räumlichen Verteilung von Wildtierpopulationen ist eine wichtige Komponente bei der Entwicklung von Managementstrategien zu deren Erhaltung. Landschaftsstruktur und -zusammensetzung sind wichtige Determinanten dafür, wo Arten vorkommen und wie lebensfähig ihre Populationen sind. In dieser Übung modellieren wir die Auswirkungen der Landschaftsstruktur auf die Verbreitung von Koalas (_Phascolarctos cinereus_) in einer Landschaft im Osten Australiens. 
+## Introduction
+Predicting the spatial distribution of wildlife populations is an important component of the development of management strategies for their conservation. Landscape structure and composition are important determinants of where species occur and the viability of their populations. In this exercise, we will model the impact of landscape pattern on the distribution of koalas (_Phascolarctos cinereus_) in a landscape in eastern Australia. 
 
-Das Untersuchungsgebiet, das wir für dieses Kapitel betrachten, ist die Noosa Local Government Area (LGA) im Südosten Queenslands, Australien (Abb. 21.2). Noosa hat ein subtropisches Küstenklima. Über 50 % der ursprünglichen Eukalyptuswälder wurden für Landwirtschaft und Stadtentwicklung gerodet. Koalas sind daher durch den Verlust und die Fragmentierung ihres Lebensraums sowie durch Bedrohungen im Zusammenhang mit der Verstädterung, wie Autos und Haushunde, bedroht. 
+The study area we consider for this chapter is the Noosa Local Government Area (LGA) in southeast Queensland, Australia (Fig. 21.2). Noosa has a subtropical coastal climate Over 50% of the original eucalypt forests have been cleared for farming and urban development. Koalas are, therefore, threatened by the loss and fragmentation of their habitat and by threats associated with urbanisation, such as cars and domestic dogs. 
 
-Wir werden verallgemeinerte lineare Modelle mit gemischten Effekten (GLMM) verwenden, um die Verbreitung von Koalas zu modellieren, indem wir Daten über ihre An- und Abwesenheit an Standorten im gesamten Untersuchungsgebiet verwenden. Wir verfolgen auch einen multiskaligen Ansatz in dem Sinne, dass unsere erklärenden Variablen Landschaftscharakteristika sind, die an verschiedenen Landschaftsausmaßen gemessen werden. Die Analyse konzentriert sich auf den Umgang mit Kollinearität und räumlicher Autokorrelation für diese Arten von Landschaftsmodellen.
+We will use generalised linear mixed effects models (GLMM) to model the distribution of koalas using data on their presence and absence at sites located across the study area. We also take a multi-scale approach in the sense that our explanatory variables will be landscape characteristics measured at different landscape extents. The analysis concentrates on dealing with collinearity and spatial auto-correlation for these types of landscape models.
 
-## Daten
-Die vorgestellten Daten basieren auf Erhebungen, die durchgeführt wurden, um die Anwesenheit oder Abwesenheit von Koalas an 300 Orten in Noosa zu bestimmen. Unter Verwendung einer Form von geschichteten Zufallsstichproben wurden zunächst 100 Standorte in der gesamten LGA von Noosa festgelegt. Dann wurden innerhalb jedes Standorts drei Unterstandorte im Abstand von 100 m festgelegt. An jedem Teilstandort wurde dann die Anwesenheit oder Abwesenheit von Koalas durch eine standardisierte Suche nach Koala-Kotpellets an den Basen von Bäumen bestimmt. In früheren Arbeiten wurden die bevorzugten Baumarten der Koalas in Noosa identifiziert und in primäre, sekundäre und ergänzende Arten unterteilt. An jedem Teilstandort wurde der prozentuale Anteil der Bäume, die primäre und sekundäre Arten waren, aufgezeichnet. Schließlich wurde die Verteilung des Koala-Habitats (klassifiziert in sehr geeignetes, geeignetes, marginales und ungeeignetes Habitat) kartiert. 
+## Data
+The data presented are based on surveys that were conducted to determine koala presence or absence at 300 locations in Noosa. Using a form of stratified random sampling, 100 sites were first located across the Noosa LGA. Then, within each site, three subsites were located 100 m apart. At each subsite, the presence or absence of koalas was then determined using standardised searches for koala faecal pellets around the bases of trees. Previous work has identified the koala’s preferred tree species in Noosa and these have been classified into primary, secondary, and supplementary species. At each subsite, the percentage of trees that were primary and secondary species was recorded. Finally, the distribution of koala habitat (classified into highly suitable, suitable, marginal, and unsuitable habitat) was mapped. 
 
-Die Daten zur Anwesenheit/Abwesenheit von Koalas bilden die Antwortvariable für unsere Analyse, während die Daten zu den bevorzugten Baumarten und zum Lebensraum die Grundlage für die erklärenden Variablen bilden.
+The data on the presence/absence of koalas will be the response variable for our analysis, while the data on preferred tree species and habitat will form the basis of the explanatory variables.
 
-Der Datenrahmen enthält eine Zeile für jeden Teilstandort. Die Spalten:
+The data frame contains a row for each subsite. The columns:
 
-- `site`: Standort-ID
-- `subsite`: Unterseiten-ID-Nummern
-- `easting`: Östungen der Lage der einzelnen Teilstandorte (in AMG ADG 1966-Koordinaten)
-- `northing`: Nördlingen 
-- `presence`: ob Koala-Pellets an der Teilfläche gefunden wurden (= 1) oder nicht an der Teilfläche gefunden wurden (= 0)
-- `pprim_ssite`: %Bäume in jeder Teilfläche, die primäre Baumarten sind
-- `psec_ssite`: %Bäume in jeder Teilfläche, die sekundäre Baumarten sind
-- `pdens_1km`: Dichte der Habitatfelder (Felder/100 ha), bestehend aus sehr geeignetem plus geeignetem plus marginalem Habitat, in der Landschaft im Umkreis von 1 km von jedem Teilstandort
+- `site`: site ID
+- `subsite`: subsite ID numbers
+- `easting`: eastings of the location of each subsite (in AMG ADG 1966 coordinates)
+- `northing`: northings 
+- `presence`: whether koala pellets were found at the subsite (= 1) or not found at the subsite (= 0)
+- `pprim_ssite`: %trees in each subsite that are primary tree species
+- `psec_ssite`: %trees in each subsite that are secondary tree species
+- `pdens_1km`: density of habitat patches (patches/100 ha), consisting of highly suitable plus suitable plus marginal habitat, in the landscape within 1 km of each subsite
  
-```{r}
+```{r data prep}
 koalas <- readRDS(url('https://github.com/aeda2021/2021_master/raw/main/raw-data/koalas.rds'))
 ```
 
-## Datenuntersuchung
-Zwei wichtige Punkte, die vor der Erstellung von Regressionsmodellen für die Verteilung von Arten zu berücksichtigen sind, sind, ob eine hohe Kollinearität zwischen den erklärenden Variablen besteht und ob die räumliche Autokorrelation zwischen Datenpunkten wahrscheinlich ein wichtiger Faktor ist. Hohe Kollinearität kann zu Koeffizientenschätzungen führen, die schwer als unabhängige Effekte zu interpretieren sind und/oder hohe Standardfehler aufweisen. Eine positive räumliche Autokorrelation verstößt gegen die übliche Annahme der Unabhängigkeit zwischen Datenpunkten und führt zu einer Unterschätzung der Standardfehler und zu erhöhten Fehlern vom Typ I, wenn sie nicht berücksichtigt werden. Kollinearität zwischen erklärenden Variablen und räumliche Autokorrelation sind häufig anzutreffen, wenn Beobachtungsdaten zur Konstruktion von Regressionsmodellen der Verteilung von Arten verwendet werden. Für diese beiden Probleme untersuchen wir, ob sie wahrscheinlich ein Problem für die Analyse unseres Datensatzes darstellen und diskutieren dann, wie sie angegangen werden können.
+## Data exploration
+Two important issues to consider before building regression models of species’ distributions are whether there is high collinearity between the explanatory variables and whether spatial auto-correlation between data points is likely to be an important factor. High collinearity can result in coefficient estimates that are difficult to interpret as independent effects and/or have high standard errors. Positive spatial auto-correlation violates the usual assumption of independence between data points and leads to the underestimation of standard errors, and elevated type I errors, if not accounted for. Collinearity between explanatory variables and spatial auto-correlation are commonly encountered when using observational data to construct regression models of species’ distributions. For both these issues, we examine whether they are likely to be a problem for the analysis of our dataset and then discuss how they can be addressed.
 
-### Diagramme
-Beginnen wir damit, einige Diagramme der Antwortvariablen im Vergleich zu jeder der erklärenden Variablen zu erstellen. Es ist auch hilfreich, eine Karte zu erstellen (Darstellung der Antwort als Punktfarbe im Vergleich zu Nord- und Ostrichtung)
-```{r}
+### Plots
+Let's start by making some plots of the response variable vs. each of the explanatory variables. It's also helpful to make a map (plot response as dot color vs. northing and easting)
+```{r plots}
 
 ```
 
-### Kollinearität auswerten
-Ein einfacher erster Schritt zur Identifizierung von Kollinearität ist die Betrachtung der paarweisen Korrelationen zwischen den erklärenden Variablen. Wir verwenden den Spearman-Rangkorrelationskoeffizienten und nicht den Pearson-Korrelationskoeffizienten, weil die Spearman-Rangkorrelation keine Annahmen über die Linearität der Beziehung zwischen den beiden Variablen macht. Eine grobe Richtlinie ist, dass Korrelationen zwischen Variablenpaaren mit Größenordnungen größer als ±0,5 auf eine hohe Kollinearität hinweisen.
+### Evaluate colinearity
+A simple first step for identifying collinearity is to look at the pairwise correlations between explanatory variables. We'll use the Spearman rank correlation coefficient, rather than the Pearson correlation coefficient because the Spearman rank correlation makes no assumptions about linearity in the relationship between the two variables. A rough guideline is that correlations between pairs of variables with magnitudes greater than ±0.5 indicate high collinearity.
 
-Es gibt mehrere Strategien, die wir verwenden können, um mit der gefundenen Kollinearität zwischen den erklärenden Variablen umzugehen. Dazu gehören (i) das einfache Entfernen einer oder mehrerer Variablen, so dass die verbleibenden Variablen nicht hoch korreliert sind, (ii) die Verwendung von Linearkombinationen der Variablen anstatt der Variablen direkt im Modell, oder (iii) die Verwendung von verzerrten Schätzverfahren wie Hauptkomponentenregression oder Ridge-Regression. Die ersten beiden sind am einfachsten.
+There are several strategies that we could use to deal with collinearity found between the explanatory variables. These include (i) simply removing one or more variables so that the remaining variables are not highly correlated, (ii) using linear combinations of the variables rather than the variables directly in the model, or (iii) using biased estimation procedures such as principal components regression or ridge regression. The first two are most straightforward.
 
-Die erklärenden Variablen befinden sich in den Spalten 6:8, so dass ein einfacher Ansatz darin besteht, `pairs()` und `cor(..., method = 'spearman')` auf `koalas[, 6:8]` zu verwenden. 
+The explanatory variables are in columns 6:8, so an easy approach use to use `pairs()` and `cor(..., method = 'spearman')` on `koalas[, 6:8]`. 
 
-Bitte verwenden Sie den unten stehenden Codeblock.
+Please use the code block below.
 
-```{r}
-# hier tippen
+```{r colinear}
+# type here
 ```
 
-#### Q1: Sehen Sie Anzeichen von Kolinearität, die Sie beunruhigen? Wenn ja, welche?
+#### Q1: Do you see signs of colinearity that concern you? If so, which ones?
 
 
 
 
-## Räumliche Autokorrelation auswerten
-Es gibt zwei Gründe für die Erwartung einer räumlichen Autokorrelation in den Präsenz/Absenz-Daten. Erstens kann es zu einer räumlichen Autokorrelation auf der Ebene der Standorte kommen, weil die Entfernungen zwischen den Unterstandorten innerhalb der einzelnen Standorte im Verhältnis zur Größe der Koala-Heimatgebiete klein sind. Die durchschnittliche Größe der Koala-Heimatgebiete in ähnlichen Lebensräumen an der Ostküste wurde auf 10-25 ha für Weibchen und 20-90 ha für Männchen geschätzt. Daher werden die Vorkommen von Koalas an Teilstandorten innerhalb eines einzelnen Standorts tendenziell korreliert sein, da sie sich oft innerhalb des Heimatgebiets desselben Koalas befanden. 
+## Evaluate spatial autocorrelation
+There are two reasons for expecting spatial auto-correlation in the presence/absence data. First, spatial auto-correlation at the site-scale may occur because the distances between the subsites within individual sites are small relative to the size of koala home ranges. Average koala home range sizes in similar east coast habitats have been estimated at between 10–25 ha for females and 20–90 ha for males. Therefore, the occurrences of koalas at subsites within an individual site will tend to be correlated because they would often have been located within the same koala’s home range. 
 
-Zweitens kann eine räumliche Autokorrelation auf breiterer Skala aufgrund der räumlich begrenzten Ausbreitung von Koalas aus ihren ursprünglichen Heimatgebieten auftreten. Die Dispersionsdistanzen von Koalas in nahegelegenen Regionen wurden mit etwa 3-4 km angegeben, können aber auch bis zu 10 km betragen. Die Dispersionsdistanzen sind also wesentlich kleiner als die räumliche Ausdehnung des Untersuchungsgebiets, und dies könnte auch zu einer räumlichen Autokorrelation zwischen den Standorten führen. Wir könnten auch eine räumliche Autokorrelation in den Präsenz-/Absenzdaten sehen, wenn das zugrunde liegende räumliche Muster des Lebensraums räumlich autokorreliert ist. Wir würden jedoch erwarten, dass unsere erklärenden Variablen den größten Teil der räumlichen Autokorrelation aus dieser Quelle erklären, sobald das Regressionsmodell an die Daten angepasst ist, und daher als weniger besorgniserregend angesehen wird.
+Second, spatial auto-correlation at broader scales may occur due to spatially constrained dispersal of koalas from their natal home ranges. Koala dispersal distances in nearby regions have been recorded to be around 3–4 km, but can be as high as 10 km. So, dispersal distances are substantially smaller than the spatial extent of the study area, and this could also lead to spatial auto-correlation between sites. We could also see spatial auto-correlation in the presence/absence data if the underlying spatial pattern of habitat is spatially auto-correlated. However, we would expect our explanatory variables to account for most of the spatial auto-correlation from this source once the regression model is fitted to the data and is therefore considered to be of less concern.
 
-Eine Möglichkeit, das Ausmaß der räumlichen Autokorrelation zu beurteilen, ist die Betrachtung von Korrelationsdiagrammen der Daten. Korrelationsdiagramme sind grafische Darstellungen der räumlichen Korrelation zwischen Orten in einem Bereich von Verzögerungsabständen. Eine positive räumliche Korrelation weist darauf hin, dass die räumliche Autokorrelation zwischen Datenpunkten ein Problem darstellen könnte. Negative räumliche Korrelation kann auch auf ein Problem hinweisen, aber das ist bei dieser Art von Daten eher ungewöhnlich; daher befassen wir uns hauptsächlich mit positiven Korrelationen. Wir verwenden ein Spline-Korrelogramm, um die Autokorrelation in den An-/Abwesenheitsdaten zu untersuchen. Das von uns verwendete Spline-Korrelogramm ist im Wesentlichen ein Korrelogramm, das mit einer Spline-Funktion geglättet wird. 
+One way to assess the extent of spatial auto-correlation is to look at correlograms of the data. Correlograms are graphical representations of the spatial correlation between locations at a range of lag distances. Positive spatial correlation indicates that spatial autocorrelation between data points may be a problem. Negative spatial correlation may also indicate a problem, but this is fairly unusual in this kind of data; so we are mainly concerned with positive correlations. We use a spline correlogram to investigate auto-correlation in the presence/absence data. The spline correlogram that we use is essentially a correlogram that is smoothed using a spline function. 
 
-Wir werden uns zunächst die räumliche Autokorrelation in den Rohdaten ansehen. Wir sind jedoch vor allem daran interessiert, ob es eine räumliche Autokorrelation in den Modellresiduen gibt, nachdem jegliche räumliche Autokorrelation, die durch die erklärenden Variablen erklärt wird, berücksichtigt wurde.
+We will first look at spatial auto-correlation in the raw data. However, we are predominantly interested in whether there is any spatial auto-correlation in model residuals once any spatial auto-correlation explained by the explanatory variables has been accounted for.
 
-Ein Spline-Korrelogramm der rohen An-/Abwesenheitsdaten kann mit dem folgenden Code gezeichnet werden. Die Funktion `spline.correlog()` führt 1000 Bootstraps durch, um 95% Konfidenzintervalle bis zu einer maximalen Lag-Distanz von 10 km zu berechnen und kann einige Minuten dauern.
+A spline correlogram of the raw presence/absence data can be plotted using the code below. The `spline.correlog()` function does 1000 bootstraps to calculate 95% confidence intervals up to a maximum lag distance of 10 km and may take a few minutes to run.
 
-```{r}
+```{r correlogram}
 correlog <- spline.correlog(x = koalas$easting,
                             y = koalas$northing,
                             z = koalas$presence, 
                             xmax = 10000)
 plot(correlog)
 ```
-#### Q2: Sehen Sie eine positive räumliche Autokorrelation, über die wir uns Sorgen machen sollten? Wenn ja, auf welchen Skalen?
+#### Q2: Do you see positive spatial auto-correlation that we should be concerned about? If so, at what scales?
 
 
 
 
-## Standardisieren der erklärenden Variablen
-Bevor die Modelle an die Daten angepasst werden, sollten die erklärenden Variablen so standardisiert werden, dass sie jeweils einen Mittelwert von Null und eine Standardabweichung von Eins haben. Dies hilft, die Konvergenz des Anpassungsalgorithmus zu verbessern und bringt die geschätzten Koeffizienten auf die gleiche Skala, wodurch die Effektgrößen leichter verglichen werden können. Wir können die erklärenden Variablen standardisieren, indem wir eine Funktion auf jede der Spalten mit erklärenden Variablen anwenden:
+## Standardize the explanatory variables
+Before fitting models to the data, the explanatory variables should be standardized so that they each have a mean of zero and standard deviation of one. This helps to improve convergence of the fitting algorithm and puts the estimated coefficients on the same scale, allowing effect sizes to be more easily compared. We can standardize the explanatory variables by applying a function to each of the columns with explanatory variables:
 
-```{r}
+```{r standardize}
 koalas_st <- cbind(koalas[, 1:5],
                    apply(X = koalas[, 6:ncol(koalas)], 
                          MARGIN = 2, 
@@ -102,48 +102,48 @@ koalas_st <- cbind(koalas[, 1:5],
                    )
 ```
 
-## Anpassen eines ersten Modells (GLM)
-Unsere Antwortvariable ist Anwesenheit/Abwesenheit und wird daher keine schöne Gaußsche Verteilung haben. Bitte wählen Sie eine geeignetere Fehlerverteilung und passen Sie ein `glm()` mit Anwesenheit als Antwortvariable und `pprim_ssite`, `psec_ssite`, und `pdens_1km` als erklärende Variablen an.  Verwenden Sie `koalas_st` als Datenquelle, da sie die standardisierten Variablen enthält. Speichern Sie Ihr Modell in `mod_glm`, damit es mit einem späteren Code, den wir verwenden werden, funktioniert.
+## Fit a first model (GLM)
+Our response variable is presence/absence, and so it is not going to have nice Gaussian distribution. Please choose a more appropriate error distribution and fit a `glm()` with presence as the response variable and `pprim_ssite`, `psec_ssite`, and `pdens_1km` as the explanatory variables.  Use `koalas_st` as your data source since it has the standardized variables. Save your model in `mod_glm` so that it works with some later code we'll use.
 
-```{r}
+```{r glmfit}
 
 ```
 
-Verwenden Sie sicherheitshalber `summary()`, um einen kurzen Blick darauf zu werfen:
+Just for good measure, use `summary()` to take a quick look:
 ```{r glmsum}
 
 ```
 
-### Bewerten Sie das Modell
-Wie gut passt unser Modell? Die Auswertung von GLM(M)s kann schwierig sein, schauen wir uns das mit dem DHARMa-Paket an. Wie Sie lesen, sind die grundlegenden Schritte
+### Evaluate the model
+How well does our model fit? Evaluating GLM(M)s can be hard, let's look using the DHARMa package. As you read, the basic steps are
 
-- Simulieren Sie neue Daten mit dem angepassten Modell für jede Beobachtung.
-- Berechnen Sie für jede Beobachtung die empirische kumulative Dichtefunktion für die simulierten Beobachtungen, die die möglichen Werte (und deren Wahrscheinlichkeit) bei der Prädiktorenkombination des beobachteten Wertes beschreibt, unter der Annahme, dass das angepasste Modell korrekt ist.
-- Das Residuum ist dann definiert als der Wert der empirischen Dichtefunktion bei dem Wert der beobachteten Daten, so dass ein Residuum von 0 bedeutet, dass alle simulierten Werte größer als der beobachtete Wert sind, und ein Residuum von 0,5 bedeutet, dass die Hälfte der simulierten Werte größer als der beobachtete Wert sind.
+- Simulate new data from the fitted model for each observation.
+- For each observation, calculate the empirical cumulative density function for the simulated observations, which describes the possible values (and their probability) at the predictor combination of the observed value, assuming the fitted model is correct.
+- The residual is then defined as the value of the empirical density function at the value of the observed data, so a residual of 0 means that all simulated values are larger than the observed value, and a residual of 0.5 means half of the simulated values are larger than the observed value.
 
-Wenn die beobachteten Daten aus demselben datenerzeugenden Prozess erzeugt wurden, aus dem wir simulieren, sollten alle Werte der kumulativen Verteilung mit gleicher Wahrscheinlichkeit auftreten. Das heißt, wir erwarten, dass die Verteilung der Residuen flach ist, unabhängig von der Modellstruktur (Poisson, Binomial, zufällige Effekte und so weiter).
+If the observed data were created from the same data-generating process that we simulate from, all values of the cumulative distribution should appear with equal probability. That means we expect the distribution of the residuals to be flat, regardless of the model structure (Poisson, binomial, random effects and so on).
 
-Der erste Schritt ist die Simulation der randomisierten Quantilresiduen. Die Voreinstellung ist 250 Simulationen.
+First step is to simulate the randomized quantile residuals. Default is 250 simulations.
 ```{r glmres}
 res_glm <- simulateResiduals(fittedModel = mod_glm, plot = F)
 ```
 
-Dann plotten Sie sie. 
+Then plot them. 
 ```{r glmplot}
 plot(res_glm)
 ```
 
-Links ist ein qq-Plot zur Erkennung von Gesamtabweichungen von der erwarteten Verteilung, standardmäßig mit zusätzlichen Tests auf korrekte Verteilung (KS-Test), Streuung und Ausreißer. Wir wollen, dass die Residuen (schwarze Punkte) auf der roten Linie für die erwartete Verteilung liegen. Der DHARMa-Tutorial-Abschnitt über "Erkennen von Über-/Unterdispersion" ist gut geeignet, um Abweichungen davon zu interpretieren. 
+On the left is a qq-plot to detect overall deviations from the expected distribution, by default with added tests for correct distribution (KS test), dispersion and outliers. We want the residuals (black dots) to line up on the red line for the expected distribution. The DHARMa tutorial section on "Recognizing over/underdispersion" is good for interpreting deviations from this. 
 
-Auf der rechten Seite ist ein Diagramm der Residuen gegen den vorhergesagten Wert zu sehen. Simulationsausreißer sind als rote Sterne hervorgehoben. Diese Punkte sollten vorsichtig interpretiert werden, da wir eigentlich nicht wissen, "wie sehr" diese Werte von der Modellerwartung abweichen. Beachten Sie, dass Ausreißer in DHARMa Werte sind, die standardmäßig als Werte außerhalb der Simulationshüllkurve definiert sind, nicht in Bezug auf ein bestimmtes Quantil. Beachten Sie auch, dass die Wahrscheinlichkeit eines Ausreißers von der Anzahl der Simulationen abhängt. Ob das Vorhandensein von Ausreißern ein Grund zur Besorgnis ist, hängt also auch von der Anzahl der Simulationen ab (n=250 oben).
+On the right panel is a plot of the residuals against the predicted value. Simulation outliers are highlighted as red stars. These points should be carefully interpreted, because we actually don’t know “how much” these values deviate from the model expectation. Note that outliers in DHARMa are values that are by default defined as values outside the simulation envelope, not in terms of a particular quantile. Note also that the probability of an outlier depends on the number of simulations, so whether the existence of outliers is a reason for concern depends also on the number of simulations (n=250 above).
 
-Um eine visuelle Hilfe bei der Erkennung von Abweichungen von der Gleichmäßigkeit in y-Richtung zu bieten, berechnet die Plot-Funktion eine Quantilsregression, die die empirischen 0,25-, 0,5- und 0,75-Quantile in y-Richtung (durchgezogene Linien) mit den theoretischen 0,25-, 0,5- und 0,75-Quantilen (gestrichelte schwarze Linie) vergleicht und einen p-Wert für die Abweichung vom erwarteten Quantil liefert. Die Signifikanz der Abweichung zu den erwarteten Quantilen wird getestet und visuell dargestellt.
+To provide a visual aid in detecting deviations from uniformity in y-direction, the plot function calculates a quantile regression, which compares the empirical 0.25, 0.5 and 0.75 quantiles in the y-direction (solid lines) with the theoretical 0.25, 0.5 and 0.75 quantiles (dashed black line), and provides a p-value for the deviation from the expected quantile. The significance of the deviation to the expected quantiles is tested and displayed visually.
 
-#### Q3: Bewerten Sie den QQ-Plot und die Residuen vs. vorhergesagte Plots. Wenn Sie Bedenken sehen, beschreiben Sie diese bitte.
+#### Q3: Evaluate the QQ plot and the residuals vs. predicted plots. If you see any concerns, please describe them.
 
 
-### Auswertung der räumlichen Autokorrelation im GLM
-Wir waren besorgt über die räumliche Autokorrelation in unseren Rohdaten, also wollen wir sehen, ob die Einbeziehung der erklärenden Variablen dieses Problem löst. Verwenden Sie denselben Code, den Sie zuvor für das Spline-Korrelogramm verwendet haben, aber verwenden Sie jetzt `resid(mod_glm)` als z-Achse.
+### Evaluate spatial auto-correlation in the GLM
+We were concerned about spatial auto-correlation in our raw data, so let's see if including the explanatory variables solved this. Use the same code that you used earlier for the spline correlogram, but now use `resid(mod_glm)` as the z axis.
 
 ```{r glmspatial}
 
@@ -151,67 +151,42 @@ Wir waren besorgt über die räumliche Autokorrelation in unseren Rohdaten, also
 ```
 
 
-#### Q4: Sehen Sie Hinweise auf eine räumliche Autokorrelation in den Residuen? Auf welcher räumlichen Skala? Wie hängt dies mit dem Studiendesign zusammen?
+#### Q4: Do you see evidence of spatial auto-correlation in the residuals? At what spatial scale? How does this relate to the study design?
 
 
 
-## Anpassen eines GLMM
-Wie Sie in der Lektüre gelernt haben, sind GLMMs nützlich, wenn die Daten in irgendeiner Weise hierarchisch strukturiert sind. Sie berücksichtigen Abhängigkeiten innerhalb hierarchischer Gruppen durch die Einführung von Zufallseffekten. In dieser Studie sind die Daten in dem Sinne hierarchisch strukturiert, dass Unterseiten innerhalb von Standorten verschachtelt sind, und wir möchten Modelle mit gemischten Effekten verwenden, um die räumlichen Abhängigkeiten innerhalb der Standorte zu berücksichtigen. Ein geeignetes Modell mit gemischten Effekten für diese Zwecke kann konstruiert werden, indem ein Zufallseffekt für den Standort in das Standardmodell der logistischen Regression eingeführt wird.
+## Fit a GLMM
+As you learned in the reading, GLMMs are useful when data are hierarchically structured in some way. They account for dependencies within hierarchical groups through the introduction of random-effects. In this study, the data are hierarchically structured in the sense that subsites are nested within sites, and we want to use mixed effects models to account for the spatial dependencies within sites. A suitable mixed effects model for these purposes can be constructed by introducing a random-effect for site into the standard logistic regression model.
 
-Wie Sie auch gelesen haben (z.B. Ben Bolker's FAQ), sind GLMMs nicht einfach zu fitten oder zu interpretieren. Die Methoden werden ständig weiterentwickelt. Hier werden wir das glmmTMB-Paket verwenden, das von Ben Bolker entwickelt wurde. Als Anmerkung, es hat auch einige nette Funktionen für die Berücksichtigung von null-inflationären Daten und Heteroskedastizität, auf die wir heute nicht eingehen werden.
+As you also read (e.g., Ben Bolker's FAQ), GLMMs are not simple to fit or interpret. The methods continue to evolve. Here, we will use the glmmTMB package developed by Ben Bolker. As a note, it also has some nice features for considering zero-inflated data and heteroscedasticity that we won't get into today.
 
-Die Syntax für glmmTMB ist wie `lmer()` in lme4 und wie `glm()`, was schön ist. Siehe `?glmmTMB` für weitere Informationen.
+The syntax for glmmTMB is like `lmer()` in lme4 and like `glm()`, which is nice. See `?glmmTMB` for more information.
 ```
-Modell <- glmmTMB(Antwort ~ erklärendeVariablen + (1|zufällig), data=meineDaten, family=Familie) # ein zufälliges Intercept-Modell
-Modell <- glmmTMB(Antwort ~ erklärendeVariablen + (Neigung|zufällig), data=meineDaten, family=Familie) # ein zufälliges Intercept- und Slope-Modell
-```
-
-Hier verwenden wir `site` als Zufallseffekt, um die räumliche Autokorrelation und Pseudoreplikation auf dieser Skala zu berücksichtigen.
-
-Im folgenden Code-Block fitten Sie ein GLMM mit `glmmTMB()` mit `pprim_ssite`, `psec_ssite` und `pdens_1km` als erklärende Variablen (wie Ihr GLM) und `site` als zufälligen Intercept. Stellen Sie sicher, dass Sie eine Familie wählen, die für diese Daten sinnvoll ist. Verwenden Sie `koalas_st` als Ihre Datenquelle und speichern Sie unter `mod_glmm`.
-```{r}
-
-
+model <- glmmTMB(response ~ explanantoryvars + (1|random), data=mydata, family=family) # a random intercept model
+model <- glmmTMB(response ~ explanantoryvars + (slope|random), data=mydata, family=family) # a random intercept and slope model
 ```
 
-Werfen Sie einen Blick mit `summary()` auf Ihr GLMM.
-```{r}
+Here, we'll use `site` as a random effect to help account for the spatial auto-correlation and pseudoreplication at that scale.
+
+In the code block below, fit a GLMM using `glmmTMB()` with `pprim_ssite`, `psec_ssite`, and `pdens_1km` as your explanatory variables (like your GLM) and `site` as a random intercept. Make sure to pick a family that makes sense for these data. Use `koalas_st` as your data source and save to `mod_glmm`.
+```{r glmmfit}
 
 
 ```
 
-### Das Modell auswerten
-Fahren Sie fort und bewerten Sie Ihr GLMM mit 
-
-- DHARMa simulierten Residuen und Standardplots
-- ein räumliches Korrelogramm der Residuen
-
-wie Sie es für das GLM getan haben. 
-
-```{r}
-
+Take a look with `summary()` on your GLMM.
+```{r glmmsum}
 
 
 ```
 
+### Evaluate the model
+Go ahead and evaluate your GLMM using 
 
-Es ist auch sinnvoll, die Residuen gegen jede der erklärenden Variablen aufzutragen. Sie können dies in DHARMa mit der Syntax
-```
-plotResiduals(SimulationAusgang, IhreDaten$variabel)
-```
+- DHARMa simulated residuals and standard plots
+- a spatial correlogram of the residuals
 
-Führen Sie dies für die drei erklärenden Variablen unten durch:
-```{r}
-
-
-```
-
-#### Q5: Bewerten Sie das QQ-Diagramm, das Residuen vs. vorhergesagtes Diagramm, das Spline-Korrelogramm und die Residuen vs. explorative Variablen. Gibt es irgendetwas, das Sie beunruhigt?
-
-
-
-## Anpassen eines alternativen GLMMs
-Wir können auch zwischen GLMMs mit AIC vergleichen. Passen Sie ein neues GLMM wie Ihr erstes an, aber nur mit Variablen auf der Site-Skala (nur `pprim_ssite` und `psec_ssite`).
+as you did for the GLM. 
 
 ```{r}
 
@@ -219,10 +194,35 @@ Wir können auch zwischen GLMMs mit AIC vergleichen. Passen Sie ein neues GLMM w
 
 ```
 
-### Vergleichen Sie die Modelle
-Vergleichen Sie nun Ihre Modelle. Sie können die Syntax verwenden
+
+It is also good practice to plot the residuals against each of the explanatory variables. You can do this in DHARMa with the syntax
 ```
-AIC(Modell1, Modell2)
+plotResiduals(simulationOutput, yourData$variable)
+```
+
+Go ahead and do this for the three explanatory variables below:
+```{r}
+
+
+```
+
+#### Q5: Evaluate the QQ plot, the residuals vs. predicted plot, the spline correlogram, and the residuals vs. explantory variables. Does anything concern you?
+
+
+
+## Fit an alternative GLMM
+We can also compare among GLMMs with AIC. Fit a new GLMM like your first but with only site-scale variables in it (only `pprim_ssite` and `psec_ssite`).
+
+```{r}
+
+
+
+```
+
+### Compare the models
+Now compare your models. You can use the syntax
+```
+AIC(model1, model2)
 ```
 
 ```{r}
@@ -230,10 +230,8 @@ AIC(Modell1, Modell2)
 
 ```
 
-#### Q6: Welches Modell erscheint nach AIC als parsimonisch? Was haben Sie über die räumlichen Verteilungen der Koalas gelernt?
+#### Q6: Which model appears to be parsimonious according to AIC? What have you learned about koala spatial distributions?
 
 
 
-Wenn Sie fertig sind, klicken Sie oben auf "Knit", um dies in ein Github-Dokument zu verwandeln, das auf Github schön angezeigt wird. Es wird auch ein Unterverzeichnis mit den Bilddateien darin erstellt. Commitieren Sie alles in Ihr Git-Repositorium und pushen Sie es auf Github. __Glückwunsch!__
-
-If you made it to the end, congratulations! And April Fools! The English version is [here](https://github.com/aeda2021/2021_master/blob/5bc86b1818cbdd6efd1074cf7ecd980f28e97022/scripts/10_GLMMs.Rmd)
+When you're done, click "Knit" above to turn this into a Github document that will display nicely on Github. It will also create a sub-directory with the image files in it. Commit everything to your Git repo, and push to Github. __Congratulations!__
