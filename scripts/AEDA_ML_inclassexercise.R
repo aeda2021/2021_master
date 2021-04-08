@@ -19,7 +19,7 @@ library(kernlab)
 
 ## Load helper scripts from Lucas 2020 - these are on the Github site as ML_helpers.R
 ## You can download and then source from this file (change file path to the location on your computer)
-source('[your.directory]/ML_helpers.R')
+source('scripts/ML_helpers.R')
 
 set.seed(100)
 
